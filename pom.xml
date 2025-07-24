@@ -4,11 +4,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>me.hektortm</groupId>
-    <artifactId>woscore</artifactId>
-    <version>1.7.0</version>
+    <artifactId>core</artifactId>
+    <version>1.21.8-0.0.1</version>
     <packaging>jar</packaging>
 
-    <name>woscore</name>
+    <name>core</name>
 
     <properties>
         <java.version>21</java.version>
@@ -19,7 +19,7 @@
         <repository>
             <id>github</id>
             <name>GitHub HektorTM Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/hektortm/woscore/</url>
+            <url>https://maven.pkg.github.com/worldofsorcery/core/</url>
         </repository>
     </distributionManagement>
 
@@ -60,7 +60,7 @@
     <repositories>
         <repository>
             <id>github</id>
-            <url>https://maven.pkg.github.com/HektorTM/WoSCore/</url>
+            <url>https://maven.pkg.github.com/WorldOfSorcery/Core/</url>
         </repository>
         <repository>
             <id>papermc-repo</id>
@@ -85,8 +85,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21.1-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
+            <version>1.21.8-R0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -96,7 +95,7 @@
         <dependency>
             <groupId>net.kyori</groupId>
             <artifactId>adventure-api</artifactId>
-            <version>4.17.0</version>
+            <version>4.23.0</version>
         </dependency>
         <dependency>
             <groupId>net.luckperms</groupId>
