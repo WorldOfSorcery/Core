@@ -328,6 +328,56 @@ public class Utils {
         return result;
     }
 
+    public static String parseColorCodeString(String input) {
+        if (input == null || input.isEmpty()) {
+            return "";
+        }
+
+        Component result = Component.empty();
+        int lastIndex = 0;
+        var matcher = HEX_PATTERN.matcher(input);
+
+        while (matcher.find()) {
+            // Process text before this hex color
+            if (matcher.start() > lastIndex) {
+                String before = input.substring(lastIndex, matcher.start());
+                result = result.append(parseLegacy(before));
+            }
+
+            // Get the hex color
+            TextColor color = TextColor.fromHexString(matcher.group());
+            if (color == null) {
+                lastIndex = matcher.end(); // Skip invalid hex code
+                continue;
+            }
+
+            // Determine the next hex code's start, or end of string
+            int textStart = matcher.end();
+            int textEnd = input.length();
+
+            Matcher nextMatcher = HEX_PATTERN.matcher(input);
+            if (nextMatcher.find(textStart)) {
+                textEnd = nextMatcher.start();
+            }
+
+            String coloredText = input.substring(textStart, textEnd);
+            Component coloredComponent = parseLegacy(coloredText).color(color);
+            result = result.append(coloredComponent);
+
+            lastIndex = textEnd;
+        }
+
+        // Process any remaining text
+        if (lastIndex < input.length()) {
+            String remaining = input.substring(lastIndex);
+            result = result.append(parseLegacy(remaining));
+        }
+
+        // Serialize Component back into §-formatted String
+        return LEGACY_SERIALIZER.serialize(result);
+    }
+
+
 
     private static Component parseLegacy(String text) {
         return LEGACY_SERIALIZER.deserialize(text.replace('&', '§'));
