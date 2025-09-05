@@ -1,5 +1,7 @@
 package me.hektortm.wosCore;
 
+import me.hektortm.wosCore.discord.DiscordLog;
+import me.hektortm.wosCore.discord.DiscordLogger;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class LangManager {
     private final Map<String, FileConfiguration> langFiles = new HashMap<>();
@@ -37,10 +40,15 @@ public class LangManager {
             for (File file : files) {
                 String filename = file.getName().replace(".yml", "");
                 langFiles.put(filename, YamlConfiguration.loadConfiguration(file));
-                //plugin.getLogger().info("Loaded language file: " + filename + ".yml");
             }
         } else {
             plugin.getLogger().warning("No language files found in 'lang' directory.");
+            DiscordLogger.log(new DiscordLog(
+                    Level.WARNING,
+                    plugin,
+                    "LM:4a84adb1",
+                    "No Language files found in 'lang' directory."
+            ));
         }
     }
 
@@ -67,11 +75,21 @@ public class LangManager {
                     langFiles.put(filename, YamlConfiguration.loadConfiguration(destinationFile));
                     corePlugin.getLogger().info("Successfully loaded and copied " + filename + ".yml from " + sourcePlugin.getName() + " to WoSCore's lang directory.");
                 } catch (IOException e) {
-                    corePlugin.getLogger().severe("Failed to copy " + filename + ".yml to WoSCore data folder: " + e.getMessage());
+                    DiscordLogger.log(new DiscordLog(
+                            Level.SEVERE,
+                            plugin,
+                            "LM:7333addf",
+                            "Failed to copy " + filename + ".yml to WoSCore data folder: " + e.getMessage()
+                    ));
                 }
             }
         } else {
-            corePlugin.getLogger().severe("The embedded resource 'lang/" + filename + ".yml' cannot be found in " + sourcePlugin.getName());
+            DiscordLogger.log(new DiscordLog(
+                    Level.SEVERE,
+                    plugin,
+                    "LM:4a23cf71",
+                    "The embedded resource 'lang/" + filename + ".yml' cannot be found in " + sourcePlugin.getName()
+            ));
         }
     }
 

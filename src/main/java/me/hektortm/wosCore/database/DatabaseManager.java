@@ -3,6 +3,9 @@ package me.hektortm.wosCore.database;
 import me.hektortm.wosCore.WoSCore;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import me.hektortm.wosCore.discord.DiscordLog;
+import me.hektortm.wosCore.discord.DiscordLogger;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -43,8 +46,12 @@ public class DatabaseManager {
 
         // Test connection
         try (Connection testConn = dataSource.getConnection()) {
-            plugin.writeLog("DatabaseManager", Level.INFO,
-                    "Successfully connected to MySQL database with connection pooling.");
+            DiscordLogger.log(new DiscordLog(
+                    Level.INFO,
+                    plugin,
+                    "DB:a82db1d8",
+                    "Successfully connected to MySQL database with connection pooling."
+            ));
         }
     }
 
@@ -67,8 +74,12 @@ public class DatabaseManager {
     public void closeConnection() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
-            plugin.writeLog("DatabaseManager", Level.INFO,
-                    "Database connection pool closed.");
+            DiscordLogger.log(new DiscordLog(
+                    Level.INFO,
+                    plugin,
+                    "DB:dac647b4",
+                    "Database connection pool has been closed."
+            ));
         }
     }
 }

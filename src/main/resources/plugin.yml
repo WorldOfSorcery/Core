@@ -1,5 +1,5 @@
 name: Core
-version: '1.21.8-0.0.3'
+version: '1.21.8-0.0.4'
 main: me.hektortm.wosCore.WoSCore
 api-version: '1.21.8'
 author: HektorTM

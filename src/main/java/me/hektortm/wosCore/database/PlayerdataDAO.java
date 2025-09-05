@@ -1,6 +1,8 @@
 package me.hektortm.wosCore.database;
 
 import me.hektortm.wosCore.WoSCore;
+import me.hektortm.wosCore.discord.DiscordLog;
+import me.hektortm.wosCore.discord.DiscordLogger;
 import org.bukkit.entity.Player;
 import java.sql.*;
 import java.util.logging.Level;
@@ -38,7 +40,12 @@ public class PlayerdataDAO implements IDAO {
             pstmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            plugin.writeLog(logName, Level.SEVERE, "Failed to add Player: " + e);
+            DiscordLogger.log(new DiscordLog(
+                    Level.SEVERE,
+                    plugin,
+                    "PD:cfdff75d",
+                    "Failed to add Player: "+e
+            ));
         }
     }
 
@@ -51,7 +58,12 @@ public class PlayerdataDAO implements IDAO {
                 return rs.next();
             }
         } catch (SQLException e) {
-            plugin.writeLog(logName, Level.SEVERE, "Failed to verify Player Data: " + e);
+            DiscordLogger.log(new DiscordLog(
+                    Level.SEVERE,
+                    plugin,
+                    "PD:44387d4c",
+                    "Failed to verify Playerdata: "+e
+            ));
             return false;
         }
     }
@@ -65,7 +77,12 @@ public class PlayerdataDAO implements IDAO {
             pstmt.setString(3, player.getUniqueId().toString());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            plugin.writeLog(logName, Level.SEVERE, "Failed to update Username: " + e);
+            DiscordLogger.log(new DiscordLog(
+                    Level.SEVERE,
+                    plugin,
+                    "PD:5af4f379",
+                    "Failed to update Username: "+e
+            ));
         }
     }
 
@@ -80,7 +97,12 @@ public class PlayerdataDAO implements IDAO {
                 }
             }
         } catch (SQLException e) {
-            plugin.writeLog(logName, Level.SEVERE, "Failed to get last known Name: " + e);
+            DiscordLogger.log(new DiscordLog(
+                    Level.SEVERE,
+                    plugin,
+                    "PD:c81eca38",
+                    "Failed to get last known name: "+e
+            ));
         }
         return null;
     }
@@ -93,7 +115,12 @@ public class PlayerdataDAO implements IDAO {
             pstmt.setString(2, player.getUniqueId().toString());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            plugin.writeLog(logName, Level.SEVERE, "Failed to update last online Time: " + e);
+            DiscordLogger.log(new DiscordLog(
+                    Level.SEVERE,
+                    plugin,
+                    "PD:f72c9c68",
+                    "Failed to update last online time: "+e
+            ));
         }
     }
 }

@@ -4,6 +4,8 @@ import me.hektortm.wosCore.database.DatabaseManager;
 import me.hektortm.wosCore.database.LoggingDAO;
 import me.hektortm.wosCore.database.PlayerdataDAO;
 import me.hektortm.wosCore.discord.DiscordListener;
+import me.hektortm.wosCore.discord.DiscordLog;
+import me.hektortm.wosCore.discord.DiscordLogger;
 import me.hektortm.wosCore.discord.command.DiscordCommand;
 import me.hektortm.wosCore.listeners.JoinListener;
 import me.hektortm.wosCore.listeners.WhitelistLogin;
@@ -51,7 +53,16 @@ public final class WoSCore extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-
+        try {
+            jda = JDABuilder.createDefault(getConfig().getString("BOT-TOKEN"))
+                    .setStatus(OnlineStatus.ONLINE)
+                    .setActivity(Activity.playing("Minecraft"))
+                    .enableIntents(GatewayIntent.MESSAGE_CONTENT) // Enable the MESSAGE_CONTENT intent
+                    .addEventListeners(new DiscordListener()) // Register the command listener
+                    .build().awaitReady();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         try {
             // Initialize database with credentials from config
             dbManager = new DatabaseManager(
@@ -89,7 +100,6 @@ public final class WoSCore extends JavaPlugin {
 
         int langFileCount = lang.getActiveLangFileCount();
 
-        getLogger().info("Active Language Files: " + langFileCount);
 
         this.lang = new LangManager(this);
 
@@ -97,21 +107,21 @@ public final class WoSCore extends JavaPlugin {
         Utils.init(lang);
 
         loadConfig();
-        try {
-            jda = JDABuilder.createDefault(getConfig().getString("BOT-TOKEN"))
-                    .setStatus(OnlineStatus.ONLINE)
-                    .setActivity(Activity.playing("Minecraft"))
-                    .enableIntents(GatewayIntent.MESSAGE_CONTENT) // Enable the MESSAGE_CONTENT intent
-                    .addEventListeners(new DiscordListener()) // Register the command listener
-                    .build().awaitReady();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
+
+
 
         Bukkit.getPluginManager().registerEvents(new WhitelistLogin(), this);
         Bukkit.getPluginManager().registerEvents(new JoinListener(new PlayerdataDAO(dbManager)), this);
         commandReg("writelog", new DebugCommand(logManager, lang, this));
         commandReg("discord", new DiscordCommand(this));
+
+        DiscordLogger.log(new DiscordLog(
+                Level.INFO,
+                this,
+                "M:8fb72730",
+                "Core v"+WoSCore.getPlugin(WoSCore.class).getPluginMeta().getVersion()+" successfully started with " + langFileCount + " active language files."
+        ));
     }
 
 
@@ -122,7 +132,12 @@ public final class WoSCore extends JavaPlugin {
         try {
             dbManager.closeConnection();
         } catch (Exception e) {
-            writeLog("WoSCore", Level.SEVERE, "Failed to close database: " + e.getMessage());
+            DiscordLogger.log(new DiscordLog(
+                    Level.SEVERE,
+                    this,
+                    "M:f8f719e7",
+                    "Failed to close database connection: " + e.getMessage()
+            ));
         }
         if (jda != null) {
             jda.shutdown();
