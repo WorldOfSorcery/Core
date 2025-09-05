@@ -50,7 +50,7 @@ public class DatabaseManager {
                     Level.INFO,
                     plugin,
                     "DB:a82db1d8",
-                    "Successfully connected to MySQL database with connection pooling."
+                    "Successfully connected to MySQL database with connection pooling.", null
             ));
         }
     }
@@ -78,7 +78,7 @@ public class DatabaseManager {
                     Level.INFO,
                     plugin,
                     "DB:dac647b4",
-                    "Database connection pool has been closed."
+                    "Database connection pool has been closed.",null
             ));
         }
     }

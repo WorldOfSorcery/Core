@@ -47,7 +47,7 @@ public class LangManager {
                     Level.WARNING,
                     plugin,
                     "LM:4a84adb1",
-                    "No Language files found in 'lang' directory."
+                    "No Language files found in 'lang' directory.", null
             ));
         }
     }
@@ -79,16 +79,18 @@ public class LangManager {
                             Level.SEVERE,
                             plugin,
                             "LM:7333addf",
-                            "Failed to copy " + filename + ".yml to WoSCore data folder: " + e.getMessage()
+                            "Failed to copy " + filename + ".yml to WoSCore data folder: ",
+                            e
                     ));
                 }
             }
         } else {
+            Exception e = new Exception("Resource not found");
             DiscordLogger.log(new DiscordLog(
                     Level.SEVERE,
                     plugin,
                     "LM:4a23cf71",
-                    "The embedded resource 'lang/" + filename + ".yml' cannot be found in " + sourcePlugin.getName()
+                    "The embedded resource 'lang/" + filename + ".yml' cannot be found in " + sourcePlugin.getName(), e
             ));
         }
     }

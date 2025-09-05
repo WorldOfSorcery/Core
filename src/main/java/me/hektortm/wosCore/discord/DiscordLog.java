@@ -10,12 +10,14 @@ public class DiscordLog {
     private final JavaPlugin plugin;
     private final String uuid;
     private final String message;
+    private final Exception e;
 
-    public DiscordLog(Level level, JavaPlugin plugin, String uuid, String message) {
+    public DiscordLog(Level level, JavaPlugin plugin, String uuid, String message, Exception e) {
         this.level = level;
         this.plugin = plugin;
         this.uuid = uuid;
         this.message = message;
+        this.e = e;
     }
 
     public Level getLevel() {
@@ -29,5 +31,8 @@ public class DiscordLog {
     }
     public String getMessage() {
         return message;
+    }
+    public Exception getException() {
+        return e;
     }
 }

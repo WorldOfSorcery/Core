@@ -3,6 +3,7 @@ package me.hektortm.wosCore;
 import me.hektortm.wosCore.database.DatabaseManager;
 import me.hektortm.wosCore.database.LoggingDAO;
 import me.hektortm.wosCore.database.PlayerdataDAO;
+import me.hektortm.wosCore.database.StackTraceDAO;
 import me.hektortm.wosCore.discord.DiscordListener;
 import me.hektortm.wosCore.discord.DiscordLog;
 import me.hektortm.wosCore.discord.DiscordLogger;
@@ -76,8 +77,10 @@ public final class WoSCore extends JavaPlugin {
             // Initialize DAOs
             PlayerdataDAO playerdataDAO = new PlayerdataDAO(dbManager);
             LoggingDAO loggingDAO = new LoggingDAO(dbManager);
+            StackTraceDAO stackTraceDAO = new StackTraceDAO(dbManager);
             dbManager.registerDAO(playerdataDAO);
             dbManager.registerDAO(loggingDAO);
+            dbManager.registerDAO(stackTraceDAO);
             dbManager.initializeAllDAOs();
 
             // Register other DAOs and components...
@@ -120,7 +123,7 @@ public final class WoSCore extends JavaPlugin {
                 Level.INFO,
                 this,
                 "M:8fb72730",
-                "Core v"+WoSCore.getPlugin(WoSCore.class).getPluginMeta().getVersion()+" successfully started with " + langFileCount + " active language files."
+                "Core v"+WoSCore.getPlugin(WoSCore.class).getPluginMeta().getVersion()+" successfully started with " + langFileCount + " active language files.", null
         ));
     }
 
@@ -136,7 +139,7 @@ public final class WoSCore extends JavaPlugin {
                     Level.SEVERE,
                     this,
                     "M:f8f719e7",
-                    "Failed to close database connection: " + e.getMessage()
+                    "Failed to close database connection: ", e
             ));
         }
         if (jda != null) {
@@ -236,7 +239,6 @@ public final class WoSCore extends JavaPlugin {
     public DatabaseManager getDatabaseManager() {
         return dbManager;
     }
-
 }
 
 

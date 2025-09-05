@@ -1,6 +1,7 @@
 package me.hektortm.wosCore.discord;
 
 import me.hektortm.wosCore.WoSCore;
+import me.hektortm.wosCore.database.StackTraceDAO;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.bukkit.Bukkit;
@@ -12,6 +13,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 import java.util.logging.Level;
 
 import static me.hektortm.wosCore.WoSCore.jda;
@@ -67,6 +69,19 @@ public class DiscordLogger {
             if (channel == null) {
                 return;
             }
+            String apiUrl = "";
+            if (log.getLevel() == Level.SEVERE) {
+                String stacktrace = getStackTraceAsString(log.getException());
+                UUID apiUUID = UUID.randomUUID();
+
+                StackTraceDAO stackTraceDAO = new StackTraceDAO(WoSCore.getPlugin(WoSCore.class).getDatabaseManager());
+
+                stackTraceDAO.addStacktrace(apiUUID.toString(), message, stacktrace, uuid, pluginName);
+
+
+                if (DEV_ENV) apiUrl = "http://localhost:3001/api/stacktrace/"+apiUUID;
+                else apiUrl = "https://api.worldofsorcery.com/api/stacktrace/"+apiUUID;
+            }
 
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
@@ -78,6 +93,7 @@ public class DiscordLogger {
             embed.addField("Plugin", pluginName, true);
             embed.addField("Version", pluginVersion, true);
             embed.addField("uuid", uuid, true);
+            if (log.getLevel() == Level.SEVERE) embed.addField("Stacktrace", "[View Stacktrace](" + apiUrl + ")", false);
             embed.setFooter("Dev Logging • " + formattedTime);
             embed.setColor(color);
 
@@ -87,32 +103,6 @@ public class DiscordLogger {
             e.printStackTrace();
         }
 
-    }
-
-    private static void sendToDiscord(String webhookUrl, String content) {
-        try {
-            URL url = new URL(webhookUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-            connection.setRequestMethod("POST");
-            connection.setDoOutput(true);
-            connection.setRequestProperty("Content-Type", "application/json");
-
-            String jsonPayload = "{\"content\":\"" + content.replace("\"", "\\\"") + "\"}";
-            byte[] postData = jsonPayload.getBytes(StandardCharsets.UTF_8);
-
-            try (OutputStream outputStream = connection.getOutputStream()) {
-                outputStream.write(postData);
-            }
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode != 204) {
-                System.err.println("Failed to send log to Discord: HTTP " + responseCode);
-            }
-
-        } catch (Exception e) {
-            System.err.println("Error sending log to Discord: " + e.getMessage());
-        }
     }
 
     private static String getStackTraceAsString(Throwable throwable) {

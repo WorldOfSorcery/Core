@@ -44,7 +44,7 @@ public class PlayerdataDAO implements IDAO {
                     Level.SEVERE,
                     plugin,
                     "PD:cfdff75d",
-                    "Failed to add Player: "+e
+                    "Failed to add Player: ",e
             ));
         }
     }
@@ -62,7 +62,7 @@ public class PlayerdataDAO implements IDAO {
                     Level.SEVERE,
                     plugin,
                     "PD:44387d4c",
-                    "Failed to verify Playerdata: "+e
+                    "Failed to verify Playerdata: ",e
             ));
             return false;
         }
@@ -81,7 +81,7 @@ public class PlayerdataDAO implements IDAO {
                     Level.SEVERE,
                     plugin,
                     "PD:5af4f379",
-                    "Failed to update Username: "+e
+                    "Failed to update Username: ",e
             ));
         }
     }
@@ -101,7 +101,7 @@ public class PlayerdataDAO implements IDAO {
                     Level.SEVERE,
                     plugin,
                     "PD:c81eca38",
-                    "Failed to get last known name: "+e
+                    "Failed to get last known name: ",e
             ));
         }
         return null;
@@ -119,7 +119,7 @@ public class PlayerdataDAO implements IDAO {
                     Level.SEVERE,
                     plugin,
                     "PD:f72c9c68",
-                    "Failed to update last online time: "+e
+                    "Failed to update last online time: ",e
             ));
         }
     }
