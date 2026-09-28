@@ -29,7 +29,7 @@ public class DatabaseManager {
 
         // Pool settings
         config.setPoolName("WoSCore-Pool");
-        config.setMaximumPoolSize(15); // Increased for initialization
+        config.setMaximumPoolSize(15);
         config.setMinimumIdle(5);
         config.setConnectionTimeout(30000);
         config.setIdleTimeout(600000);

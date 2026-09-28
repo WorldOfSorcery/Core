@@ -16,6 +16,8 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -44,6 +46,7 @@ import java.util.logging.Logger;
 public final class WoSCore extends JavaPlugin {
     private static WoSCore instance;
     private DatabaseManager dbManager;
+    private me.hektortm.wosCore.api.WosApi api;
     private LogManager logManager;
     private LangManager lang;
     private File langDirectory;
@@ -54,16 +57,35 @@ public final class WoSCore extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+
         try {
+            // build() is non-blocking: JDA connects to the Discord gateway on its own
+            // thread, so server startup no longer waits on Discord. Logs emitted before
+            // the gateway is ready are buffered by DiscordLogger and flushed on ReadyEvent.
             jda = JDABuilder.createDefault(getConfig().getString("BOT-TOKEN"))
                     .setStatus(OnlineStatus.ONLINE)
                     .setActivity(Activity.playing("Minecraft"))
                     .enableIntents(GatewayIntent.MESSAGE_CONTENT) // Enable the MESSAGE_CONTENT intent
-                    .addEventListeners(new DiscordListener()) // Register the command listener
-                    .build().awaitReady();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+                    .addEventListeners(new DiscordListener(), new ListenerAdapter() {
+                        @Override
+                        public void onReady(ReadyEvent event) {
+                            DiscordLogger.flushPending();
+                        }
+                    })
+                    .build();
+        } catch (Exception e) {
+            jda = null;
+            getLogger().warning("Discord bot could not be started; continuing without Discord logging: " + e.getMessage());
         }
+        // wos-api: the Go service that owns content (and, progressively, all) data.
+        api = new me.hektortm.wosCore.api.WosApi(
+                getConfig().getString("api.url", "http://localhost:8080"),
+                getConfig().getString("api.token", ""),
+                java.time.Duration.ofMillis(getConfig().getLong("api.timeout-ms", 5000)),
+                getLogger()
+        );
+
+        PlayerdataDAO playerdataDAO;
         try {
             // Initialize database with credentials from config
             dbManager = new DatabaseManager(
@@ -75,7 +97,7 @@ public final class WoSCore extends JavaPlugin {
             );
 
             // Initialize DAOs
-            PlayerdataDAO playerdataDAO = new PlayerdataDAO(dbManager);
+            playerdataDAO = new PlayerdataDAO(dbManager);
             LoggingDAO loggingDAO = new LoggingDAO(dbManager);
             StackTraceDAO stackTraceDAO = new StackTraceDAO(dbManager);
             dbManager.registerDAO(playerdataDAO);
@@ -88,10 +110,8 @@ public final class WoSCore extends JavaPlugin {
         } catch (SQLException e) {
             getLogger().severe("Failed to initialize database: " + e.getMessage());
             getServer().getPluginManager().disablePlugin(this);
+            return; // do not continue onEnable against a half-built state
         }
-        lang = new LangManager(this);
-        logManager = new LogManager(lang, this);
-
         this.langDirectory = new File(getDataFolder(), "lang");
         if(!langDirectory.exists()) {
             langDirectory.mkdirs();
@@ -101,10 +121,10 @@ public final class WoSCore extends JavaPlugin {
             playerDataFolder.mkdirs();
         }
 
+        // Construct LangManager once, after its directory exists.
+        lang = new LangManager(this);
+        logManager = new LogManager(lang, this);
         int langFileCount = lang.getActiveLangFileCount();
-
-
-        this.lang = new LangManager(this);
 
         saveDefaultConfig();
         Utils.init(lang);
@@ -115,7 +135,7 @@ public final class WoSCore extends JavaPlugin {
 
 
         Bukkit.getPluginManager().registerEvents(new WhitelistLogin(), this);
-        Bukkit.getPluginManager().registerEvents(new JoinListener(new PlayerdataDAO(dbManager)), this);
+        Bukkit.getPluginManager().registerEvents(new JoinListener(playerdataDAO), this);
         commandReg("writelog", new DebugCommand(logManager, lang, this));
         commandReg("discord", new DiscordCommand(this));
 
@@ -236,6 +256,11 @@ public final class WoSCore extends JavaPlugin {
     public LangManager getLang() {
         return lang;
     }
+    /** The shared wos-api client (blocking calls — use off the main thread). */
+    public me.hektortm.wosCore.api.WosApi getApi() {
+        return api;
+    }
+
     public DatabaseManager getDatabaseManager() {
         return dbManager;
     }
