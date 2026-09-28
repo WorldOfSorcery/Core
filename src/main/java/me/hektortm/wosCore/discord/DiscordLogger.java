@@ -3,17 +3,17 @@ package me.hektortm.wosCore.discord;
 import me.hektortm.wosCore.WoSCore;
 import me.hektortm.wosCore.database.StackTraceDAO;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 
 import static me.hektortm.wosCore.WoSCore.jda;
@@ -33,8 +33,62 @@ public class DiscordLogger {
     private static final String DEV_WARNING_CHANNEL_ID = "1413640000620331079";
     private static final String DEV_INFO_CHANNEL_ID = "1413638430029643866";
 
+    // Every log's DB insert + embed send runs off the calling thread on a single daemon
+    // thread, so log() never performs JDBC or HTTP on a hot (often main-thread) path.
+    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "WoSCore-DiscordLogger");
+        t.setDaemon(true);
+        return t;
+    });
+
+    // Logs emitted before the gateway is CONNECTED (e.g. during onEnable, or while Discord
+    // is unreachable) are buffered here and flushed by flushPending() on ReadyEvent.
+    // Bounded: offer() drops the incoming entry once MAX_PENDING is reached.
+    private static final int MAX_PENDING = 200;
+    private static final LinkedBlockingQueue<DiscordLog> PENDING = new LinkedBlockingQueue<>(MAX_PENDING);
+
+    // One reused StackTraceDAO, created lazily once the DatabaseManager exists.
+    private static volatile StackTraceDAO stackTraceDAO;
 
     public static void log(DiscordLog log) {
+        Level level = log.getLevel();
+        if (level != Level.SEVERE && level != Level.WARNING && level != Level.INFO) {
+            return; // only these three levels map to a channel
+        }
+
+        JDA current = jda;
+        if (current == null || current.getStatus() != JDA.Status.CONNECTED) {
+            // Gateway not ready — buffer and return (silently drop if the buffer is full).
+            PENDING.offer(log);
+            return;
+        }
+        EXECUTOR.submit(() -> dispatch(log));
+    }
+
+    /** Flush buffered logs once the gateway is ready. Invoked from JDA's ReadyEvent. */
+    public static void flushPending() {
+        DiscordLog log;
+        while ((log = PENDING.poll()) != null) {
+            final DiscordLog pending = log;
+            EXECUTOR.submit(() -> dispatch(pending));
+        }
+    }
+
+    private static StackTraceDAO stackTraceDAO() {
+        StackTraceDAO local = stackTraceDAO;
+        if (local == null) {
+            synchronized (DiscordLogger.class) {
+                local = stackTraceDAO;
+                if (local == null) {
+                    local = new StackTraceDAO(WoSCore.getPlugin(WoSCore.class).getDatabaseManager());
+                    stackTraceDAO = local;
+                }
+            }
+        }
+        return local;
+    }
+
+    private static void dispatch(DiscordLog log) {
         String channelId;
         String title;
         int color;
@@ -58,14 +112,15 @@ public class DiscordLogger {
             return;
         }
 
-        JavaPlugin plugin = log.getPlugin();
-        String pluginName = plugin.getName();
-        String pluginVersion = "v"+plugin.getPluginMeta().getVersion();
+        JavaPlugin logPlugin = log.getPlugin();
+        String pluginName = logPlugin.getName();
+        String pluginVersion = "v"+logPlugin.getPluginMeta().getVersion();
         String message = log.getMessage();
         String uuid = log.getUuid();
 
         try {
-            TextChannel channel = jda.getTextChannelById(channelId);
+            JDA current = jda;
+            TextChannel channel = current == null ? null : current.getTextChannelById(channelId);
             if (channel == null) {
                 return;
             }
@@ -74,9 +129,7 @@ public class DiscordLogger {
                 String stacktrace = getStackTraceAsString(log.getException());
                 UUID apiUUID = UUID.randomUUID();
 
-                StackTraceDAO stackTraceDAO = new StackTraceDAO(WoSCore.getPlugin(WoSCore.class).getDatabaseManager());
-
-                stackTraceDAO.addStacktrace(apiUUID.toString(), message, stacktrace, uuid, pluginName);
+                stackTraceDAO().addStacktrace(apiUUID.toString(), message, stacktrace, uuid, pluginName);
 
 
                 if (DEV_ENV) apiUrl = "http://localhost:3001/api/stacktrace/"+apiUUID;

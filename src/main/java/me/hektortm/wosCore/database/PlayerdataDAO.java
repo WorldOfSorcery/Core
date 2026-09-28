@@ -5,6 +5,7 @@ import me.hektortm.wosCore.discord.DiscordLog;
 import me.hektortm.wosCore.discord.DiscordLogger;
 import org.bukkit.entity.Player;
 import java.sql.*;
+import java.util.UUID;
 import java.util.logging.Level;
 
 public class PlayerdataDAO implements IDAO {
@@ -27,6 +28,34 @@ public class PlayerdataDAO implements IDAO {
                     last_online TIMESTAMP NOT NULL
                 )
             """);
+        }
+    }
+
+    /**
+     * Single-statement upsert used by the join path: inserts a new player (with
+     * {@code last_online = now}) or, for an existing one, refreshes username/last_known_name
+     * without touching last_online (quit owns that). Replaces the old
+     * addPlayer/isInDatabase/getLastKnownName/updateUsername sequence — including the
+     * double-insert when both hasPlayedBefore() and isInDatabase() were false.
+     * Intended to be called off the main thread. (T13 ports the SQL to Postgres.)
+     */
+    public void ensurePlayer(UUID uuid, String name) {
+        String sql = "INSERT INTO playerdata (uuid, username, last_known_name, last_online) VALUES (?, ?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE username = VALUES(username), last_known_name = VALUES(last_known_name)";
+        try (Connection conn = db.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, uuid.toString());
+            pstmt.setString(2, name);
+            pstmt.setString(3, name);
+            pstmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            DiscordLogger.log(new DiscordLog(
+                    Level.SEVERE,
+                    plugin,
+                    "PD:ensure01",
+                    "Failed to ensure Player: ", e
+            ));
         }
     }
 
