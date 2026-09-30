@@ -56,7 +56,16 @@ jobs:
 
       - name: Publish to GitHub Packages (the other plugins build against it)
         if: steps.v.outputs.new == 'true'
-        run: mvn -B -ntp deploy -DskipTests
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          # Packages never overwrites a version: skip one that is already there.
+          POM="https://maven.pkg.github.com/world-of-sorcery/core/me/hektortm/core/$VERSION/core-$VERSION.pom"
+          if curl -sf -o /dev/null -u "$GH_PACKAGES_USER:$GH_PACKAGES_TOKEN" "$POM"; then
+            echo "::warning::core $VERSION is already in GitHub Packages: not published again (bump the version to publish a change)"
+          else
+            mvn -B -ntp deploy -DskipTests
+          fi
       - name: GitHub Release
         if: steps.v.outputs.new == 'true'
         env:
