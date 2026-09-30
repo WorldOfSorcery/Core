@@ -227,6 +227,8 @@ public final class WoSCore extends JavaPlugin {
 
 
 
+    /** @deprecated Lang files are no longer copied to the server; messages come from the jars and wos-api ({@link LangStore}). */
+    @Deprecated
     public void addLangFile(Plugin plugin, String fileName) {
         try (InputStream inputStream = plugin.getResource("lang/" + fileName)) {
             if (inputStream == null) {
