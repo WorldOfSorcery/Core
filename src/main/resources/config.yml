@@ -5,7 +5,7 @@ database:
   port: 3306
   name: 'WoS'
   username: 'root'
-  password: 'HektorTM'
+  password: 'passwprd'
 
 housepoint-channel: 'ID'
 warning-channel: 'ID'
