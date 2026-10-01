@@ -146,8 +146,8 @@
   <distributionManagement>
     <repository>
       <id>github</id>
-      <name>GitHub HektorTM Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/worldofsorcery/core/</url>
+      <name>GitHub World-of-Sorcery Maven Packages</name>
+      <url>https://maven.pkg.github.com/world-of-sorcery/core/</url>
     </repository>
   </distributionManagement>
   <properties>

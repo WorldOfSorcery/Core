@@ -47,6 +47,7 @@ public final class WoSCore extends JavaPlugin {
     private static WoSCore instance;
     private DatabaseManager dbManager;
     private me.hektortm.wosCore.api.WosApi api;
+    private me.hektortm.wosCore.presence.PresenceReporter presence;
     private LogManager logManager;
     private LangManager lang;
     private File langDirectory;
@@ -136,6 +137,9 @@ public final class WoSCore extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new WhitelistLogin(), this);
         Bukkit.getPluginManager().registerEvents(new JoinListener(playerdataDAO), this);
+        // Who is online, for the portal's "Online staff".
+        presence = new me.hektortm.wosCore.presence.PresenceReporter(this, api);
+        presence.start();
         commandReg("writelog", new DebugCommand(logManager, lang, this));
         commandReg("discord", new DiscordCommand(this));
 
@@ -152,6 +156,7 @@ public final class WoSCore extends JavaPlugin {
     @Override
     public void onDisable() {
         reloadConfig();
+        if (presence != null) presence.stop(); // the server is empty now
         try {
             dbManager.closeConnection();
         } catch (Exception e) {
